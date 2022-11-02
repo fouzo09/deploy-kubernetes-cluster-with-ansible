@@ -1,0 +1,25 @@
+---
+- hosts: master
+  become: yes
+  vars_files:
+    - vars/main.yml
+  tasks:
+  - name: Initialize the Kubernetes cluster on the control plane node using kubeadm
+    shell: |
+      sudo kubeadm init --pod-network-cidr 192.168.0.0/16 --kubernetes-version 1.24.0
+  - name: create .kube directory
+    become: yes
+    become_user: ubuntu
+    file:
+      path: $HOME/.kube
+      state: directory
+      mode: 0755
+  - name: copy admin.conf to user's kube config
+    copy:
+      src: /etc/kubernetes/admin.conf
+      dest: /home/ubuntu/.kube/config
+      remote_src: yes
+      owner: ubuntu
+  - name: Install the Calico Network Add-On
+    shell: |
+      kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
